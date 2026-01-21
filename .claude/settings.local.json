@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(swift build:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.hackingwithswift.com)",
+      "WebFetch(domain:tanaschita.com)",
+      "WebFetch(domain:cocoacasts.com)",
+      "WebFetch(domain:ghostty.org)",
+      "WebFetch(domain:hrtval.medium.com)",
+      "WebFetch(domain:fluffy.es)",
+      "WebFetch(domain:smallsharpsoftwaretools.com)"
+    ]
+  }
+}
