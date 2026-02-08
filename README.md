@@ -124,7 +124,7 @@ Claude Code Hook
     ↓
 open ClaudeZellijWhip.app --args notify --terminal <name> --message "..."
     ↓
-App captures: $ZELLIJ_SESSION_NAME, $ZELLIJ_PANE_ID, current tab name
+App captures: $ZELLIJ_SESSION_NAME, $ZELLIJ_PANE_ID, $WEZTERM_PANE, current tab name
     ↓
 Shows macOS notification (with terminal + context in userInfo)
     ↓
@@ -132,12 +132,21 @@ User clicks notification
     ↓
 App activates the configured terminal (by bundle identifier)
     ↓
+[WezTerm only] If $WEZTERM_PANE was set:
+  → wezterm cli list --format json (find tab_id for pane)
+  → wezterm cli activate-tab --tab-id <tab_id>
+  → wezterm cli activate-pane --pane-id <pane_id>
+    ↓
 App runs: zellij --session <session> action go-to-tab-name <tab>
     ↓
 App runs: zellij --session <session> pipe --plugin file:~/.config/zellij/plugins/room.wasm --name focus-pane -- <pane_id>
     ↓
 room plugin calls focus_terminal_pane(pane_id)
 ```
+
+### WezTerm tab focusing
+
+When using WezTerm, the app automatically focuses the correct tab and pane. WezTerm sets the `WEZTERM_PANE` environment variable in every pane, which the app captures at notification time. On click, it uses `wezterm cli` to switch to the right tab and pane — so if you have multiple WezTerm tabs with different Zellij sessions, the notification takes you to the exact one where Claude is waiting.
 
 ## Project Structure
 

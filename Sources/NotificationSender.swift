@@ -17,6 +17,7 @@ func sendNotification(args: [String]) async {
 
   let session = ProcessInfo.processInfo.environment["ZELLIJ_SESSION_NAME"]
   let paneId = ProcessInfo.processInfo.environment["ZELLIJ_PANE_ID"]
+  let weztermPaneId = ProcessInfo.processInfo.environment["WEZTERM_PANE"]
   let tabName = getCurrentTabName(session: session)
 
   let center = UNUserNotificationCenter.current()
@@ -44,6 +45,7 @@ func sendNotification(args: [String]) async {
     "session": session ?? "",
     "tabName": tabName ?? "",
     "paneId": paneId ?? "",
+    "weztermPaneId": weztermPaneId ?? "",
     "terminal": terminal.rawValue,
   ]
 
