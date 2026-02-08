@@ -1,9 +1,35 @@
 import AppKit
 
-func focusGhostty() {
-  let ghostty = NSWorkspace.shared.runningApplications
-    .first { $0.bundleIdentifier == "com.mitchellh.ghostty" }
-  ghostty?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+enum Terminal: String, CaseIterable {
+  case ghostty
+  case wezterm
+  case iterm2
+  case kitty
+
+  var bundleIdentifier: String {
+    switch self {
+    case .ghostty: return "com.mitchellh.ghostty"
+    case .wezterm: return "com.github.wez.wezterm"
+    case .iterm2: return "com.googlecode.iterm2"
+    case .kitty: return "net.kovidgoyal.kitty"
+    }
+  }
+
+  init?(fromArg value: String) {
+    switch value.lowercased() {
+    case "ghostty": self = .ghostty
+    case "wezterm": self = .wezterm
+    case "iterm2", "iterm": self = .iterm2
+    case "kitty": self = .kitty
+    default: return nil
+    }
+  }
+}
+
+func focusTerminal(_ terminal: Terminal) {
+  let app = NSWorkspace.shared.runningApplications
+    .first { $0.bundleIdentifier == terminal.bundleIdentifier }
+  app?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
 }
 
 func focusZellijTab(session: String, tabName: String, paneId: String?) {

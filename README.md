@@ -1,6 +1,15 @@
 # claude-zellij-whip
 
-Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [Ghostty](https://ghostty.org/) + [Zellij](https://zellij.dev/). When you click a notification, it focuses Ghostty, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
+Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [Zellij](https://zellij.dev/). When you click a notification, it focuses your terminal, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
+
+Supports multiple terminals via the `--terminal` flag:
+
+| Terminal | Flag | Bundle ID |
+|----------|------|-----------|
+| [Ghostty](https://ghostty.org/) | `--terminal ghostty` (default) | `com.mitchellh.ghostty` |
+| [WezTerm](https://wezfurlong.org/wezterm/) | `--terminal wezterm` | `com.github.wez.wezterm` |
+| [iTerm2](https://iterm2.com/) | `--terminal iterm2` | `com.googlecode.iterm2` |
+| [Kitty](https://sw.kovidgoyal.net/kitty/) | `--terminal kitty` | `net.kovidgoyal.kitty` |
 
 ![screenshot](screenshot.png)
 
@@ -14,12 +23,12 @@ A headless macOS app that:
 
 1. Sends notifications via `UNUserNotificationCenter`
 2. Captures Zellij context (session, tab, pane) when sending
-3. On click: focuses Ghostty → navigates to tab → focuses pane
+3. On click: focuses your terminal → navigates to tab → focuses pane
 
 ## Dependencies
 
 - **macOS** (uses `UNUserNotificationCenter`)
-- **[Ghostty](https://ghostty.org/)** terminal
+- A supported terminal (Ghostty, WezTerm, iTerm2, or Kitty)
 - **[Zellij](https://zellij.dev/)** terminal multiplexer
 - **[room](https://github.com/rvcas/room)** - Zellij plugin that handles pane focusing via pipe
 
@@ -28,14 +37,10 @@ A headless macOS app that:
 ### 1. Install the room plugin
 
 ```bash
-# Clone and build
-git clone https://github.com/rvcas/room
-cd room
-cargo build --release
-
-# Copy to Zellij plugins
+# Download pre-built wasm
 mkdir -p ~/.config/zellij/plugins
-cp target/wasm32-wasip1/release/room.wasm ~/.config/zellij/plugins/
+curl -sL "https://github.com/rvcas/room/releases/latest/download/room.wasm" \
+    -o ~/.config/zellij/plugins/room.wasm
 ```
 
 Make sure room is loaded in your Zellij session (via layout or config).
@@ -67,7 +72,15 @@ make install SIGNING_IDENTITY="Apple Development: Your Name (XXXXXXXXXX)"
 ### Manual test
 
 ```bash
+# Ghostty (default)
 open ~/Applications/ClaudeZellijWhip.app --args notify \
+  --title "Claude Code" \
+  --message "Test notification" \
+  --folder "my-project"
+
+# WezTerm
+open ~/Applications/ClaudeZellijWhip.app --args notify \
+  --terminal wezterm \
   --title "Claude Code" \
   --message "Test notification" \
   --folder "my-project"
@@ -85,20 +98,22 @@ Add to `~/.claude/settings.json` (see [hooks documentation](https://docs.anthrop
         "matcher": "idle_prompt",
         "hooks": [{
           "type": "command",
-          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --title 'Claude Code' --message 'Waiting for your input' --folder ${CLAUDE_PROJECT_DIR##*/}"
+          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --terminal ghostty --title 'Claude Code' --message 'Waiting for your input' --folder ${CLAUDE_PROJECT_DIR##*/}"
         }]
       },
       {
         "matcher": "permission_prompt",
         "hooks": [{
           "type": "command",
-          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --title 'Claude Code' --message 'Permission needed' --folder ${CLAUDE_PROJECT_DIR##*/}"
+          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --terminal ghostty --title 'Claude Code' --message 'Permission needed' --folder ${CLAUDE_PROJECT_DIR##*/}"
         }]
       }
     ]
   }
 }
 ```
+
+Replace `--terminal ghostty` with `wezterm`, `iterm2`, or `kitty` as needed.
 
 The `--folder` parameter appends the project folder name to the notification title (e.g., "Claude Code [my-project]"), using the `CLAUDE_PROJECT_DIR` environment variable provided by Claude Code.
 
@@ -107,15 +122,15 @@ The `--folder` parameter appends the project folder name to the notification tit
 ```
 Claude Code Hook
     ↓
-open ClaudeZellijWhip.app --args notify --message "..."
+open ClaudeZellijWhip.app --args notify --terminal <name> --message "..."
     ↓
 App captures: $ZELLIJ_SESSION_NAME, $ZELLIJ_PANE_ID, current tab name
     ↓
-Shows macOS notification (with context in userInfo)
+Shows macOS notification (with terminal + context in userInfo)
     ↓
 User clicks notification
     ↓
-App activates Ghostty
+App activates the configured terminal (by bundle identifier)
     ↓
 App runs: zellij --session <session> action go-to-tab-name <tab>
     ↓
@@ -131,12 +146,12 @@ claude-zellij-whip/
 ├── Sources/
 │   ├── main.swift              # Entry point, mode detection
 │   ├── AppDelegate.swift       # Notification click handling
-│   ├── NotificationSender.swift # Notification creation
-│   ├── FocusManager.swift      # Ghostty/Zellij focus logic
+│   ├── NotificationSender.swift # Notification creation + --terminal parsing
+│   ├── FocusManager.swift      # Terminal enum + Zellij focus logic
 │   └── ZellijContext.swift     # Tab name extraction
 ├── Resources/
 │   ├── Info.plist              # App bundle config (LSUIElement)
-│   └── AppIcon.icns            # App icon (shows in notifications)
+│   └── AppIcon.icns           # App icon (shows in notifications)
 ├── Package.swift
 └── Makefile
 ```

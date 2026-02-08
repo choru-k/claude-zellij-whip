@@ -4,6 +4,13 @@ import UserNotifications
 func sendNotification(args: [String]) async {
   let message = parseArg(args, flag: "--message") ?? "Notification"
   let baseTitle = parseArg(args, flag: "--title") ?? "Claude Code"
+  let terminalArg = parseArg(args, flag: "--terminal") ?? "ghostty"
+
+  guard let terminal = Terminal(fromArg: terminalArg) else {
+    let supported = Terminal.allCases.map { $0.rawValue }.joined(separator: ", ")
+    print("Unknown terminal: \(terminalArg). Supported: \(supported)")
+    return
+  }
 
   let folder = parseArg(args, flag: "--folder")
   let title = folder != nil ? "\(baseTitle) [\(folder!)]" : baseTitle
@@ -37,6 +44,7 @@ func sendNotification(args: [String]) async {
     "session": session ?? "",
     "tabName": tabName ?? "",
     "paneId": paneId ?? "",
+    "terminal": terminal.rawValue,
   ]
 
   let request = UNNotificationRequest(
