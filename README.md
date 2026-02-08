@@ -1,6 +1,8 @@
-# claude-zellij-whip
+# claude-zellij-whip (WezTerm fork)
 
-Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [Ghostty](https://ghostty.org/) + [Zellij](https://zellij.dev/). When you click a notification, it focuses Ghostty, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
+Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [WezTerm](https://wezfurlong.org/wezterm/) + [Zellij](https://zellij.dev/). When you click a notification, it focuses WezTerm, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
+
+> **Fork note:** This is a WezTerm-adapted fork of [rvcas/claude-zellij-whip](https://github.com/rvcas/claude-zellij-whip), which was built for Ghostty. The only code change is the bundle identifier (`com.github.wez.wezterm` instead of `com.mitchellh.ghostty`).
 
 ![screenshot](screenshot.png)
 
@@ -14,12 +16,12 @@ A headless macOS app that:
 
 1. Sends notifications via `UNUserNotificationCenter`
 2. Captures Zellij context (session, tab, pane) when sending
-3. On click: focuses Ghostty → navigates to tab → focuses pane
+3. On click: focuses WezTerm → navigates to tab → focuses pane
 
 ## Dependencies
 
 - **macOS** (uses `UNUserNotificationCenter`)
-- **[Ghostty](https://ghostty.org/)** terminal
+- **[WezTerm](https://wezfurlong.org/wezterm/)** terminal
 - **[Zellij](https://zellij.dev/)** terminal multiplexer
 - **[room](https://github.com/rvcas/room)** - Zellij plugin that handles pane focusing via pipe
 
@@ -28,14 +30,10 @@ A headless macOS app that:
 ### 1. Install the room plugin
 
 ```bash
-# Clone and build
-git clone https://github.com/rvcas/room
-cd room
-cargo build --release
-
-# Copy to Zellij plugins
+# Download pre-built wasm
 mkdir -p ~/.config/zellij/plugins
-cp target/wasm32-wasip1/release/room.wasm ~/.config/zellij/plugins/
+curl -sL "https://github.com/rvcas/room/releases/latest/download/room.wasm" \
+    -o ~/.config/zellij/plugins/room.wasm
 ```
 
 Make sure room is loaded in your Zellij session (via layout or config).
@@ -43,7 +41,7 @@ Make sure room is loaded in your Zellij session (via layout or config).
 ### 2. Build and install ClaudeZellijWhip
 
 ```bash
-git clone https://github.com/rvcas/claude-zellij-whip
+git clone https://github.com/choru-k/claude-zellij-whip
 cd claude-zellij-whip
 make install
 ```
@@ -115,7 +113,7 @@ Shows macOS notification (with context in userInfo)
     ↓
 User clicks notification
     ↓
-App activates Ghostty
+App activates WezTerm
     ↓
 App runs: zellij --session <session> action go-to-tab-name <tab>
     ↓
@@ -132,7 +130,7 @@ claude-zellij-whip/
 │   ├── main.swift              # Entry point, mode detection
 │   ├── AppDelegate.swift       # Notification click handling
 │   ├── NotificationSender.swift # Notification creation
-│   ├── FocusManager.swift      # Ghostty/Zellij focus logic
+│   ├── FocusManager.swift      # WezTerm/Zellij focus logic
 │   └── ZellijContext.swift     # Tab name extraction
 ├── Resources/
 │   ├── Info.plist              # App bundle config (LSUIElement)

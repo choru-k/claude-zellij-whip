@@ -38,7 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     let tabName = userInfo["tabName"] as? String
     let paneId = userInfo["paneId"] as? String
 
-    focusGhostty()
+    focusWezTerm()
 
     if let session = session, !session.isEmpty,
       let tabName = tabName, !tabName.isEmpty
