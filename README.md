@@ -1,8 +1,15 @@
 # claude-zellij-whip (WezTerm fork)
 
-Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [WezTerm](https://wezfurlong.org/wezterm/) + [Zellij](https://zellij.dev/). When you click a notification, it focuses WezTerm, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
+Smart macOS notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) running in [Zellij](https://zellij.dev/). When you click a notification, it focuses your terminal, navigates to the correct Zellij tab, and focuses the exact pane where Claude Code is waiting.
 
-> **Fork note:** This is a WezTerm-adapted fork of [rvcas/claude-zellij-whip](https://github.com/rvcas/claude-zellij-whip), which was built for Ghostty. The only code change is the bundle identifier (`com.github.wez.wezterm` instead of `com.mitchellh.ghostty`).
+Supports multiple terminals via the `--terminal` flag:
+
+| Terminal | Flag | Bundle ID |
+|----------|------|-----------|
+| [Ghostty](https://ghostty.org/) | `--terminal ghostty` (default) | `com.mitchellh.ghostty` |
+| [WezTerm](https://wezfurlong.org/wezterm/) | `--terminal wezterm` | `com.github.wez.wezterm` |
+| [iTerm2](https://iterm2.com/) | `--terminal iterm2` | `com.googlecode.iterm2` |
+| [Kitty](https://sw.kovidgoyal.net/kitty/) | `--terminal kitty` | `net.kovidgoyal.kitty` |
 
 ![screenshot](screenshot.png)
 
@@ -16,12 +23,12 @@ A headless macOS app that:
 
 1. Sends notifications via `UNUserNotificationCenter`
 2. Captures Zellij context (session, tab, pane) when sending
-3. On click: focuses WezTerm → navigates to tab → focuses pane
+3. On click: focuses your terminal → navigates to tab → focuses pane
 
 ## Dependencies
 
 - **macOS** (uses `UNUserNotificationCenter`)
-- **[WezTerm](https://wezfurlong.org/wezterm/)** terminal
+- A supported terminal (Ghostty, WezTerm, iTerm2, or Kitty)
 - **[Zellij](https://zellij.dev/)** terminal multiplexer
 - **[room](https://github.com/rvcas/room)** - Zellij plugin that handles pane focusing via pipe
 
@@ -38,7 +45,15 @@ curl -sL "https://github.com/rvcas/room/releases/latest/download/room.wasm" \
 
 Make sure room is loaded in your Zellij session (via layout or config).
 
-### 2. Build and install ClaudeZellijWhip
+### 2. Install ClaudeZellijWhip
+
+#### Homebrew
+
+```bash
+brew install --cask choru-k/tap/claude-zellij-whip
+```
+
+#### Build from source
 
 ```bash
 git clone https://github.com/choru-k/claude-zellij-whip
@@ -65,7 +80,15 @@ make install SIGNING_IDENTITY="Apple Development: Your Name (XXXXXXXXXX)"
 ### Manual test
 
 ```bash
+# Ghostty (default)
 open ~/Applications/ClaudeZellijWhip.app --args notify \
+  --title "Claude Code" \
+  --message "Test notification" \
+  --folder "my-project"
+
+# WezTerm
+open ~/Applications/ClaudeZellijWhip.app --args notify \
+  --terminal wezterm \
   --title "Claude Code" \
   --message "Test notification" \
   --folder "my-project"
@@ -83,20 +106,22 @@ Add to `~/.claude/settings.json` (see [hooks documentation](https://docs.anthrop
         "matcher": "idle_prompt",
         "hooks": [{
           "type": "command",
-          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --title 'Claude Code' --message 'Waiting for your input' --folder ${CLAUDE_PROJECT_DIR##*/}"
+          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --terminal ghostty --title 'Claude Code' --message 'Waiting for your input' --folder ${CLAUDE_PROJECT_DIR##*/}"
         }]
       },
       {
         "matcher": "permission_prompt",
         "hooks": [{
           "type": "command",
-          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --title 'Claude Code' --message 'Permission needed' --folder ${CLAUDE_PROJECT_DIR##*/}"
+          "command": "open ~/Applications/ClaudeZellijWhip.app --args notify --terminal ghostty --title 'Claude Code' --message 'Permission needed' --folder ${CLAUDE_PROJECT_DIR##*/}"
         }]
       }
     ]
   }
 }
 ```
+
+Replace `--terminal ghostty` with `wezterm`, `iterm2`, or `kitty` as needed.
 
 The `--folder` parameter appends the project folder name to the notification title (e.g., "Claude Code [my-project]"), using the `CLAUDE_PROJECT_DIR` environment variable provided by Claude Code.
 
@@ -105,15 +130,20 @@ The `--folder` parameter appends the project folder name to the notification tit
 ```
 Claude Code Hook
     ↓
-open ClaudeZellijWhip.app --args notify --message "..."
+open ClaudeZellijWhip.app --args notify --terminal <name> --message "..."
     ↓
-App captures: $ZELLIJ_SESSION_NAME, $ZELLIJ_PANE_ID, current tab name
+App captures: $ZELLIJ_SESSION_NAME, $ZELLIJ_PANE_ID, $WEZTERM_PANE, current tab name
     ↓
-Shows macOS notification (with context in userInfo)
+Shows macOS notification (with terminal + context in userInfo)
     ↓
 User clicks notification
     ↓
-App activates WezTerm
+App activates the configured terminal (by bundle identifier)
+    ↓
+[WezTerm only] If $WEZTERM_PANE was set:
+  → wezterm cli list --format json (find tab_id for pane)
+  → wezterm cli activate-tab --tab-id <tab_id>
+  → wezterm cli activate-pane --pane-id <pane_id>
     ↓
 App runs: zellij --session <session> action go-to-tab-name <tab>
     ↓
@@ -122,6 +152,10 @@ App runs: zellij --session <session> pipe --plugin file:~/.config/zellij/plugins
 room plugin calls focus_terminal_pane(pane_id)
 ```
 
+### WezTerm tab focusing
+
+When using WezTerm, the app automatically focuses the correct tab and pane. WezTerm sets the `WEZTERM_PANE` environment variable in every pane, which the app captures at notification time. On click, it uses `wezterm cli` to switch to the right tab and pane — so if you have multiple WezTerm tabs with different Zellij sessions, the notification takes you to the exact one where Claude is waiting.
+
 ## Project Structure
 
 ```
@@ -129,12 +163,12 @@ claude-zellij-whip/
 ├── Sources/
 │   ├── main.swift              # Entry point, mode detection
 │   ├── AppDelegate.swift       # Notification click handling
-│   ├── NotificationSender.swift # Notification creation
-│   ├── FocusManager.swift      # WezTerm/Zellij focus logic
+│   ├── NotificationSender.swift # Notification creation + --terminal parsing
+│   ├── FocusManager.swift      # Terminal enum + Zellij focus logic
 │   └── ZellijContext.swift     # Tab name extraction
 ├── Resources/
 │   ├── Info.plist              # App bundle config (LSUIElement)
-│   └── AppIcon.icns            # App icon (shows in notifications)
+│   └── AppIcon.icns           # App icon (shows in notifications)
 ├── Package.swift
 └── Makefile
 ```
