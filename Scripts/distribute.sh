@@ -134,6 +134,11 @@ echo "SHA256: $SHA256_VALUE"
 echo ""
 echo "=== Step 9: Creating GitHub Release ==="
 
+# Ensure gh targets the origin repo (not upstream, if this is a fork)
+ORIGIN_URL=$(git remote get-url origin)
+GH_REPO=$(echo "$ORIGIN_URL" | sed -E 's|.*github\.com[:/]||;s|\.git$||')
+export GH_REPO
+
 # Create and push tag
 if git rev-parse "$TAG" >/dev/null 2>&1; then
     echo "Tag $TAG already exists locally."
