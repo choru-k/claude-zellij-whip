@@ -1,4 +1,4 @@
-.PHONY: build release clean install uninstall sign
+.PHONY: build release clean install uninstall sign distribute
 
 APP_NAME = ClaudeZellijWhip
 BUNDLE_NAME = $(APP_NAME).app
@@ -8,7 +8,7 @@ EXECUTABLE_NAME = claude-zellij-whip
 # Code signing identity: use "-" for ad-hoc, or your Developer ID
 # Set SIGNING_IDENTITY env var or pass to make: make install SIGNING_IDENTITY="Your Identity"
 # To find your identity: security find-identity -v -p codesigning
-SIGNING_IDENTITY ?= -
+SIGNING_IDENTITY ?= Developer ID Application: Cheol Kang (ESURPGU29C)
 
 build:
 	swift build
@@ -55,6 +55,10 @@ uninstall:
 test-notify: install
 	@echo "Sending test notification..."
 	open $(INSTALL_DIR)/$(BUNDLE_NAME) --args notify --message "Test notification from Claude Zellij Whip" --title "Test"
+
+# Sign, notarize, and release (pass VERSION=x.y.z)
+distribute:
+	@Scripts/distribute.sh $(VERSION)
 
 # List available signing identities
 list-identities:
