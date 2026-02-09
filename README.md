@@ -45,10 +45,18 @@ curl -sL "https://github.com/rvcas/room/releases/latest/download/room.wasm" \
 
 Make sure room is loaded in your Zellij session (via layout or config).
 
-### 2. Build and install ClaudeZellijWhip
+### 2. Install ClaudeZellijWhip
+
+#### Homebrew
 
 ```bash
-git clone https://github.com/rvcas/claude-zellij-whip
+brew install --cask choru-k/tap/claude-zellij-whip
+```
+
+#### Build from source
+
+```bash
+git clone https://github.com/choru-k/claude-zellij-whip
 cd claude-zellij-whip
 make install
 ```
